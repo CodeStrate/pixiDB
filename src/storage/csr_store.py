@@ -25,6 +25,7 @@ class CSR:
         self.indices = np.array(indices)
         self.edge_props = np.array(vals)
 
+
 class CSRHash:
     def __init__(self):  
         self.node_to_idx = {}
@@ -32,28 +33,26 @@ class CSRHash:
         self.node_props = {}
 
     def add_node_hash(self, node: Node):
-        idx = len(self.node_to_idx)
         if node.node_id not in self.node_to_idx:
+            idx = len(self.node_to_idx) 
             self.node_to_idx[node.node_id] = idx
             self.idx_to_node[idx] = node.node_id
             self.node_props[idx] = node.props
         else:
             raise ValueError(f'{node.node_id} already exists in hash.')
 
-    def neighbors(self, node_id, csr:CSR, buf: CSRBuffer):
+    def neighbors(self, node_id, csr:CSR, buf: "CSRBuffer"):
         idx = self.node_to_idx[node_id]
-        if csr.indptr is not None:
-            start, end = csr.indptr[idx], csr.indptr[idx+1] 
-            csr_neighbors = list(csr.indices[start:end]) if csr.indices is not None else []
-        else:
-            raise ValueError
+        csr_neighbors = []
         buf_neighbors = buf.pendingBuffer.get(idx, [])
-        all_neighbors = csr_neighbors + buf_neighbors
+        if csr.indptr is not None:
+            start, end = csr.indptr[idx], csr.indptr[idx+1]
+            csr_neighbors = list(csr.indices[start:end]) if csr.indices is not None else []
 
-        neighbor_names = [self.idx_to_node[i] for i in all_neighbors]
+        neighbor_names = [self.idx_to_node[i] for i in csr_neighbors] + [self.idx_to_node[dst] for dst, _ in buf_neighbors]
 
         return neighbor_names
-
+    
 class CSRBuffer:
     def __init__(self, threshold):
         self.pendingBuffer = defaultdict(list)
