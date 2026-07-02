@@ -8,8 +8,15 @@ class CSR:
         self.indptr = None # IA
         self.edge_props = None # A
 
+    @classmethod
+    def csr_from_arrays(cls, indices, indptr, edge_props):
+        obj = cls()
+        obj.indices = np.array(indices)
+        obj.indptr = np.array(indptr)
+        obj.edge_props = np.array(edge_props)
+        return obj
 
-    def build_csr(self, edges, num_nodes):
+    def _build_csr(self, edges, num_nodes):
         # sort by src
         graph_edges = sorted(edges, key=lambda e: e[0]) # edges are [(src, dest, props/vals), (...), ..]
 
@@ -32,7 +39,7 @@ class CSRHash:
         self.idx_to_node = {}
         self.node_props = {}
 
-    def add_node_hash(self, node: Node):
+    def _add_node_hash(self, node: Node):
         if node.node_id not in self.node_to_idx:
             idx = len(self.node_to_idx) 
             self.node_to_idx[node.node_id] = idx
@@ -41,7 +48,7 @@ class CSRHash:
         else:
             raise ValueError(f'{node.node_id} already exists in hash.')
 
-    def neighbors(self, node_id, csr:CSR, buf: "CSRBuffer"):
+    def _neighbors(self, node_id, csr:CSR, buf: "CSRBuffer"):
         idx = self.node_to_idx[node_id]
         csr_neighbors = []
         buf_neighbors = buf.pendingBuffer.get(idx, [])
@@ -62,16 +69,19 @@ class CSRBuffer:
 
         self.threshold = threshold
 
-    def add_edge_to_buffer(self, edge: Edge):
+    def add_edge(self, edge: Edge):
         src = self.hash.node_to_idx[edge.src_id]
         dst = self.hash.node_to_idx[edge.dest_id]
         props = edge.props
         self.pendingBuffer[src].append((dst, props))
         self.pendingCount += 1
         if self.pendingCount >= self.threshold:
-            self.compact()
+            self._compact()
     
-    def compact(self):
+    def add_node(self, node:Node):
+        self.hash._add_node_hash(node)
+
+    def _compact(self):
         # collect all csr edges
 
         all_edges: list = []
@@ -86,7 +96,7 @@ class CSRBuffer:
             for dst, props in vals:
                 all_edges.append((src, dst, props))
 
-        self.csr.build_csr(all_edges, num_nodes= len(self.hash.node_to_idx))
+        self.csr._build_csr(all_edges, num_nodes= len(self.hash.node_to_idx))
 
         self.pendingBuffer.clear()
         self.pendingCount = 0
