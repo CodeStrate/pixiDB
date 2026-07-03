@@ -1,5 +1,4 @@
 import pytest
-from src.storage.schemas import Node
 from src.storage.csr_store import CSRHash, CSR, CSRBuffer
 
 
@@ -64,8 +63,8 @@ def test_neighbors_csr_none_returns_only_buf_neighbors(populated_hash,
     for node in [populated_hash.idx_to_node[i] for i in range(4)]:
         pass  # nodes already in populated_hash, buf has its own hash
     buf.hash = populated_hash  # share the hash so node_to_idx is populated
-    buf.add_edge(edge_alice_graphdb)
-    buf.add_edge(edge_alice_ml)
+    buf._add_edge(edge_alice_graphdb)
+    buf._add_edge(edge_alice_ml)
     csr = CSR()  # indices and indptr are None
     result = populated_hash._neighbors("Alice", csr, buf)
     assert set(result) == {"GraphDB Paper", "ML Paper"}
@@ -80,7 +79,7 @@ def test_neighbors_merges_csr_and_buf(populated_hash,
     csr._build_csr([(0, 2, {})], num_nodes=4)  # Alice→GraphDB Paper only
     buf = CSRBuffer(threshold=1000)
     buf.hash = populated_hash
-    buf.add_edge(edge_alice_ml)  # Alice→ML Paper in buffer
+    buf._add_edge(edge_alice_ml)  # Alice→ML Paper in buffer
     result = populated_hash._neighbors("Alice", csr, buf)
     assert set(result) == {"GraphDB Paper", "ML Paper"}
 
@@ -97,6 +96,6 @@ def test_neighbors_buf_only_no_csr_edges_for_node(populated_hash, edge_bob_ml):
     csr._build_csr([(0, 2, {})], num_nodes=4)  # only Alice→GraphDB in CSR
     buf = CSRBuffer(threshold=1000)
     buf.hash = populated_hash
-    buf.add_edge(edge_bob_ml)
+    buf._add_edge(edge_bob_ml)
     result = populated_hash._neighbors("Bob", csr, buf)
     assert set(result) == {"ML Paper"}

@@ -69,7 +69,7 @@ class CSRBuffer:
 
         self.threshold = threshold
 
-    def add_edge(self, edge: Edge):
+    def _add_edge(self, edge: Edge):
         src = self.hash.node_to_idx[edge.src_id]
         dst = self.hash.node_to_idx[edge.dest_id]
         props = edge.props
@@ -84,7 +84,7 @@ class CSRBuffer:
         if self.pendingCount >= self.threshold:
             self._compact()
     
-    def add_node(self, node:Node):
+    def _add_node(self, node:Node):
         self.hash._add_node_hash(node)
 
     def _compact(self):

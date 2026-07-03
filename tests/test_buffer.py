@@ -28,34 +28,34 @@ def test_compact_triggers_at_threshold(alice, bob, graphdb_paper, ml_paper,
                                        edge_alice_graphdb, edge_alice_ml,
                                        edge_bob_ml, edge_graphdb_ml):
     buf = CSRBuffer(threshold=3)
-    buf.add_node(alice)
-    buf.add_node(bob)
-    buf.add_node(graphdb_paper)
-    buf.add_node(ml_paper)
-    buf.add_edge(edge_alice_graphdb)
-    buf.add_edge(edge_alice_ml)
-    buf.add_edge(edge_bob_ml)  # triggers compact at threshold=3
+    buf._add_node(alice)
+    buf._add_node(bob)
+    buf._add_node(graphdb_paper)
+    buf._add_node(ml_paper)
+    buf._add_edge(edge_alice_graphdb)
+    buf._add_edge(edge_alice_ml)
+    buf._add_edge(edge_bob_ml)  # triggers compact at threshold=3
     assert buf.pendingCount == 0
     assert buf.csr.indices is not None
 
 
 def test_add_edge_unknown_src_raises(alice, graphdb_paper):
     buf = CSRBuffer(threshold=100)
-    buf.add_node(alice)
+    buf._add_node(alice)
     # graphdb_paper not added to hash
     edge = Edge(src_id="Alice", dest_id="GraphDB Paper", relation_type="authored")
     with pytest.raises(KeyError):
-        buf.add_edge(edge)
+        buf._add_edge(edge)
 
 
 def test_duplicate_edge_merges_props(alice, graphdb_paper):
     buf = CSRBuffer(threshold=100)
-    buf.add_node(alice)
-    buf.add_node(graphdb_paper)
+    buf._add_node(alice)
+    buf._add_node(graphdb_paper)
 
-    buf.add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper",
+    buf._add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper",
                       relation_type="authored", props={"weight": 1}))
-    buf.add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper",
+    buf._add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper",
                       relation_type="authored", props={"weight": 2, "note": "updated"}))
 
     alice_idx = buf.hash.node_to_idx["Alice"]
@@ -68,10 +68,10 @@ def test_duplicate_edge_merges_props(alice, graphdb_paper):
 
 def test_duplicate_edge_does_not_increment_count(alice, graphdb_paper):
     buf = CSRBuffer(threshold=100)
-    buf.add_node(alice)
-    buf.add_node(graphdb_paper)
+    buf._add_node(alice)
+    buf._add_node(graphdb_paper)
 
-    buf.add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper", relation_type="authored"))
-    buf.add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper", relation_type="authored"))
+    buf._add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper", relation_type="authored"))
+    buf._add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper", relation_type="authored"))
 
     assert buf.pendingCount == 1

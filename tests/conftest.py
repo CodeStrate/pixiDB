@@ -61,12 +61,12 @@ def populated_buffer(alice, bob, graphdb_paper, ml_paper,
                      edge_alice_graphdb, edge_alice_ml,
                      edge_bob_ml, edge_graphdb_ml):
     buf = CSRBuffer(threshold=100)
-    buf.add_node(alice)
-    buf.add_node(bob)
-    buf.add_node(graphdb_paper)
-    buf.add_node(ml_paper)
-    buf.add_edge(edge_alice_graphdb)
-    buf.add_edge(edge_alice_ml)
-    buf.add_edge(edge_bob_ml)
-    buf.add_edge(edge_graphdb_ml)
+    buf._add_node(alice)
+    buf._add_node(bob)
+    buf._add_node(graphdb_paper)
+    buf._add_node(ml_paper)
+    buf._add_edge(edge_alice_graphdb)
+    buf._add_edge(edge_alice_ml)
+    buf._add_edge(edge_bob_ml)
+    buf._add_edge(edge_graphdb_ml)
     return buf
