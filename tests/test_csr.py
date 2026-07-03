@@ -15,7 +15,7 @@ SIMPLE_EDGES = [
 @pytest.fixture
 def simple_csr():
     csr = CSR()
-    csr.build_csr(SIMPLE_EDGES, num_nodes=4)
+    csr._build_csr(SIMPLE_EDGES, num_nodes=4)
     return csr
 
 
@@ -40,21 +40,21 @@ def test_build_csr_unsorted_input():
         (0, 1, {}),
     ]
     csr = CSR()
-    csr.build_csr(unsorted, num_nodes=4)
+    csr._build_csr(unsorted, num_nodes=4)
     np.testing.assert_array_equal(csr.indptr, [0, 2, 3, 4, 5])
     np.testing.assert_array_equal(csr.indices, [2, 1, 3, 1, 0])
 
 
 def test_build_csr_single_edge():
     csr = CSR()
-    csr.build_csr([(0, 1, {})], num_nodes=2)
+    csr._build_csr([(0, 1, {})], num_nodes=2)
     np.testing.assert_array_equal(csr.indptr, [0, 1, 1])
     np.testing.assert_array_equal(csr.indices, [1])
 
 
 def test_build_csr_empty_edges():
     csr = CSR()
-    csr.build_csr([], num_nodes=3)
+    csr._build_csr([], num_nodes=3)
     np.testing.assert_array_equal(csr.indptr, [0, 0, 0, 0])
     assert len(csr.indices) == 0
 

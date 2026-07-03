@@ -47,10 +47,10 @@ def edge_graphdb_ml():
 @pytest.fixture
 def populated_hash(alice, bob, graphdb_paper, ml_paper):
     h = CSRHash()
-    h.add_node_hash(alice)
-    h.add_node_hash(bob)
-    h.add_node_hash(graphdb_paper)
-    h.add_node_hash(ml_paper)
+    h._add_node_hash(alice)
+    h._add_node_hash(bob)
+    h._add_node_hash(graphdb_paper)
+    h._add_node_hash(ml_paper)
     return h
 
 
@@ -61,12 +61,12 @@ def populated_buffer(alice, bob, graphdb_paper, ml_paper,
                      edge_alice_graphdb, edge_alice_ml,
                      edge_bob_ml, edge_graphdb_ml):
     buf = CSRBuffer(threshold=100)
-    buf.hash.add_node_hash(alice)
-    buf.hash.add_node_hash(bob)
-    buf.hash.add_node_hash(graphdb_paper)
-    buf.hash.add_node_hash(ml_paper)
-    buf.add_edge_to_buffer(edge_alice_graphdb)
-    buf.add_edge_to_buffer(edge_alice_ml)
-    buf.add_edge_to_buffer(edge_bob_ml)
-    buf.add_edge_to_buffer(edge_graphdb_ml)
+    buf.add_node(alice)
+    buf.add_node(bob)
+    buf.add_node(graphdb_paper)
+    buf.add_node(ml_paper)
+    buf.add_edge(edge_alice_graphdb)
+    buf.add_edge(edge_alice_ml)
+    buf.add_edge(edge_bob_ml)
+    buf.add_edge(edge_graphdb_ml)
     return buf

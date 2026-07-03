@@ -73,6 +73,12 @@ class CSRBuffer:
         src = self.hash.node_to_idx[edge.src_id]
         dst = self.hash.node_to_idx[edge.dest_id]
         props = edge.props
+        if src in self.pendingBuffer:
+            for i, values in enumerate(self.pendingBuffer[src]):
+                old_dst, old_props = values
+                if dst == old_dst:
+                    self.pendingBuffer[src][i] = (dst, {**old_props, **props})
+                    return
         self.pendingBuffer[src].append((dst, props))
         self.pendingCount += 1
         if self.pendingCount >= self.threshold:
