@@ -32,7 +32,13 @@ class CSRIndexing:
 
         return neighbor_names
     
-    def get_edge_props(self, src_id, dst_id):
+    def get_node_props(self, node_id) -> dict:
+        idx = self.buf.hash.node_to_idx[node_id]
+        if not idx:
+            raise KeyError(f"{node_id} doesn't exist")
+        return self.buf.hash.node_props[idx]
+    
+    def get_edge_props(self, src_id, dst_id) -> dict:
         src = self.buf.hash.node_to_idx[src_id]
         dst = self.buf.hash.node_to_idx[dst_id]
         csr_props = {}
