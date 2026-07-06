@@ -1,6 +1,7 @@
 import numpy as np
-from src.storage.schemas import Node, Edge
+from src.storage.schemas import Node
 from collections import defaultdict
+import warnings
 
 class CSR:
     def __init__(self):
@@ -46,7 +47,7 @@ class CSRHash:
             self.idx_to_node[idx] = node.node_id
             self.node_props[idx] = node.props
         else:
-            raise ValueError(f'{node.node_id} already exists in hash.')
+            warnings.warn(f'{node.node_id} already exists in hash, skipping.', UserWarning)
 
     def _neighbors(self, node_id, csr:CSR, buf: "CSRBuffer"):
         idx = self.node_to_idx[node_id]
@@ -69,10 +70,7 @@ class CSRBuffer:
 
         self.threshold = threshold
 
-    def _add_edge(self, edge: Edge):
-        src = self.hash.node_to_idx[edge.src_id]
-        dst = self.hash.node_to_idx[edge.dest_id]
-        props = edge.props
+    def _add_edge(self, src, dst, props):
         if src in self.pendingBuffer:
             for i, values in enumerate(self.pendingBuffer[src]):
                 old_dst, old_props = values

@@ -2,16 +2,20 @@
 
 ## Architecture
 
-Three-layer storage stack, outermost layer is the public API:
+Full stack with Engine as the single user-facing entry point:
 
 ```
-CSRIndexing  (public API — secondary index + delegates to buffer)
-    └── CSRBuffer  (write path — pending edges, compaction trigger)
-            ├── CSRHash  (node registry — string ID ↔ integer index)
-            └── CSR  (raw arrays — indptr/indices/edge_props)
+Engine       (public API — owns storage + traversal, single instantiation point)
+    ├── CSRIndexing  (internal — secondary index + delegates to buffer)
+    │       └── CSRBuffer  (write path — pending edges, compaction trigger)
+    │               ├── CSRHash  (node registry — string ID ↔ integer index)
+    │               └── CSR  (raw arrays — indptr/indices/edge_props)
+    └── GraphLayer   (internal — P2 traversal: BFS, Dijkstra, filtered traversal)
 ```
 
-All three internal classes live in `csr_store.py` to avoid circular imports (CSRHash needed CSRBuffer for `neighbors`, CSRBuffer needed CSRHash for node lookup). Methods prefixed `_` are internal by convention.
+All three storage classes live in `csr_store.py` to avoid circular imports (CSRHash needed CSRBuffer for `neighbors`, CSRBuffer needed CSRHash for node lookup). Methods prefixed `_` are internal by convention.
+
+**Engine design:** User never instantiates `CSRIndexing` or `GraphLayer` directly. Engine owns both and is the connecting seam between them — `GraphLayer` reads graph state through Engine, not by holding a direct reference to `CSRIndexing`. This keeps the traversal layer read-only by convention and leaves room to swap storage internals without changing the traversal API.
 
 ---
 
@@ -68,6 +72,32 @@ Duplicate `(src, dst)` in the buffer merges props: `{**old_props, **new_props}`.
 Built incrementally on every `add_edge` call through `CSRIndexing`. Deduplication: if `(src, dst)` already exists for a given `relation_type`, the append is skipped. Dedup check is O(n) — acceptable for v1, revisit if relation lists grow large.
 
 **Known gap:** Index is not rebuilt on compaction — it stays consistent because it's populated at insert time, not derived from CSR arrays. But if CSR is loaded from disk (future persistence), index must be rebuilt from scratch.
+
+---
+
+## Engine Public API (v1)
+
+Engine is the contract between P1 (storage) and P2 (traversal) and the only surface the end user touches.
+
+**Write path (P1):**
+- `add_node(node: Node)`
+- `add_edge(edge: Edge)`
+
+**Read path — storage queries (P1):**
+- `neighbors(node_id: str) -> list[str]`
+- `get_edges_by_relation_type(relation_type: str) -> list[tuple]`
+
+**Read path — traversal (P2):**
+- `bfs(start: str, max_depth: int = None) -> dict[str, int]` — node_id → depth
+- `shortest_path(src: str, dst: str, weight_key: str = None) -> list[str]` — Dijkstra, weight pulled from edge props by key
+- `filtered_traversal(start: str, relation_type: str, max_depth: int = None) -> list[str]`
+
+**What GraphLayer needs from Engine (internal read interface):**
+- `neighbors(node_id)` — already with `CSRIndexing`
+- `neighbors_by_relation(node_id, relation_type)` — filtered neighbor lookup for traversal
+- `edge_props(src_id, dest_id) -> dict` — weight extraction for Dijkstra
+
+`neighbors_by_relation` and `edge_props` are not on `CSRIndexing` yet — P1 must add these before P2 can be built.
 
 ---
 

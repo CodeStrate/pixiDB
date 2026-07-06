@@ -29,6 +29,27 @@ def test_build_csr_indices(simple_csr):
 
 def test_build_csr_edge_props(simple_csr):
     assert len(simple_csr.edge_props) == 5
+    assert simple_csr.edge_props[0] == {}   # first edge (0→1) has empty props
+    assert simple_csr.edge_props[4] == {}   # last edge (3→0) has empty props
+
+
+def test_build_csr_edge_props_with_values():
+    edges = [(0, 1, {"weight": 1.0}), (0, 2, {"weight": 2.0}), (1, 0, {"weight": 0.5})]
+    csr = CSR()
+    csr._build_csr(edges, num_nodes=3)
+    assert csr.edge_props[0] == {"weight": 1.0}
+    assert csr.edge_props[1] == {"weight": 2.0}
+    assert csr.edge_props[2] == {"weight": 0.5}
+
+
+def test_csr_from_arrays():
+    indices = [1, 2, 3, 1, 0]
+    indptr = [0, 2, 3, 4, 5]
+    edge_props = [{}, {}, {}, {}, {}]
+    csr = CSR.csr_from_arrays(indices, indptr, edge_props)
+    np.testing.assert_array_equal(csr.indices, indices)
+    np.testing.assert_array_equal(csr.indptr, indptr)
+    assert len(csr.edge_props) == 5
 
 
 def test_build_csr_unsorted_input():

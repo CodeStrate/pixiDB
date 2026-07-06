@@ -53,6 +53,90 @@ def test_edge_also_added_to_buffer(populated_indexing):
     assert len(populated_indexing.buf.pendingBuffer[alice_idx]) == 2
 
 
+def test_add_edge_unknown_node_raises(indexing):
+    edge = Edge(src_id="Alice", dest_id="Unknown", relation_type="authored")
+    with pytest.raises(KeyError):
+        indexing.add_edge(edge)
+
+
+# --- get_neighbors ---
+
+def test_get_neighbors_returns_correct_names(populated_indexing):
+    result = populated_indexing.get_neighbors("Alice")
+    assert set(result) == {"GraphDB Paper", "ML Paper"}
+
+
+def test_get_neighbors_no_outgoing(populated_indexing):
+    result = populated_indexing.get_neighbors("ML Paper")
+    assert result == []
+
+
+def test_get_neighbors_unknown_node_raises(populated_indexing):
+    with pytest.raises(KeyError):
+        populated_indexing.get_neighbors("Unknown")
+
+
+# --- get_neighbors_by_relation ---
+
+def test_get_neighbors_by_relation_authored(populated_indexing):
+    result = populated_indexing.get_neighbors_by_relation("Alice", "authored")
+    assert set(result) == {"GraphDB Paper", "ML Paper"}
+
+
+def test_get_neighbors_by_relation_cites(populated_indexing):
+    result = populated_indexing.get_neighbors_by_relation("GraphDB Paper", "cites")
+    assert result == ["ML Paper"]
+
+
+def test_get_neighbors_by_relation_no_match(populated_indexing):
+    result = populated_indexing.get_neighbors_by_relation("Alice", "cites")
+    assert result == []
+
+
+# --- get_edge_props ---
+
+def test_get_edge_props_from_buffer(indexing):
+    indexing.add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper",
+                           relation_type="authored", props={"weight": 5}))
+    props = indexing.get_edge_props("Alice", "GraphDB Paper")
+    assert props == {"weight": 5}
+
+
+def test_get_edge_props_empty_props(populated_indexing):
+    # fixture edges have props={} — should not raise KeyError
+    props = populated_indexing.get_edge_props("Alice", "GraphDB Paper")
+    assert props == {}
+
+
+def test_get_edge_props_from_csr_after_compact(indexing):
+    indexing.add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper",
+                           relation_type="authored", props={"weight": 3}))
+    indexing.buf._compact()
+    props = indexing.get_edge_props("Alice", "GraphDB Paper")
+    assert props == {"weight": 3}
+
+
+def test_get_edge_props_merges_csr_and_buf(indexing):
+    indexing.add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper",
+                           relation_type="authored", props={"weight": 1}))
+    indexing.buf._compact()
+    indexing.add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper",
+                           relation_type="authored", props={"label": "core"}))
+    props = indexing.get_edge_props("Alice", "GraphDB Paper")
+    assert props.get("weight") == 1       # from CSR
+    assert props.get("label") == "core"   # from buffer
+
+
+def test_get_edge_props_not_found_raises(indexing):
+    with pytest.raises(KeyError):
+        indexing.get_edge_props("Alice", "GraphDB Paper")
+
+
+def test_get_edge_props_unknown_node_raises(indexing):
+    with pytest.raises(KeyError):
+        indexing.get_edge_props("Alice", "Unknown")
+
+
 def test_duplicate_edge_not_duplicated_in_index(indexing):
     edge = Edge(src_id="Alice", dest_id="GraphDB Paper",
                 relation_type="authored", props={"weight": 1})
@@ -62,4 +146,5 @@ def test_duplicate_edge_not_duplicated_in_index(indexing):
     edges = indexing.get_edges_by_relation_type("authored")
     alice_idx = indexing.buf.hash.node_to_idx["Alice"]
     graphdb_idx = indexing.buf.hash.node_to_idx["GraphDB Paper"]
-    assert edges.count((alice_idx, graphdb_idx)) == 1  # index — buffer dedupes
+    assert edges.count((alice_idx, graphdb_idx)) == 1
+    assert indexing.get_edge_props("Alice", "GraphDB Paper") == {"weight": 2}

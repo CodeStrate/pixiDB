@@ -65,8 +65,6 @@ def populated_buffer(alice, bob, graphdb_paper, ml_paper,
     buf._add_node(bob)
     buf._add_node(graphdb_paper)
     buf._add_node(ml_paper)
-    buf._add_edge(edge_alice_graphdb)
-    buf._add_edge(edge_alice_ml)
-    buf._add_edge(edge_bob_ml)
-    buf._add_edge(edge_graphdb_ml)
+    for e in [edge_alice_graphdb, edge_alice_ml, edge_bob_ml, edge_graphdb_ml]:
+        buf._add_edge(buf.hash.node_to_idx[e.src_id], buf.hash.node_to_idx[e.dest_id], e.props)
     return buf
