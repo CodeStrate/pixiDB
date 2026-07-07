@@ -1,13 +1,13 @@
 import pytest
 from src.storage.schemas import Node, Edge
-from src.storage.csr_store import CSRBuffer
-from src.storage.csr_indexing import CSRIndexing
+from src.storage.store import CSRBuffer
+from src.storage.index import GraphIndex
 
 
 @pytest.fixture
 def indexing(alice, bob, graphdb_paper, ml_paper):
     buf = CSRBuffer(threshold=100)
-    idx = CSRIndexing(buf)
+    idx = GraphIndex(buf)
     idx.add_node(alice)
     idx.add_node(bob)
     idx.add_node(graphdb_paper)

@@ -1,5 +1,5 @@
 import pytest
-from src.storage.csr_store import CSRHash, CSR, CSRBuffer
+from src.storage.store import CSRHash, CSR, CSRBuffer
 
 
 def test_add_node_assigns_sequential_idx(alice, bob):

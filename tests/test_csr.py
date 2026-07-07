@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from src.storage.csr_store import CSR
+from src.storage.store import CSR
 
 
 SIMPLE_EDGES = [

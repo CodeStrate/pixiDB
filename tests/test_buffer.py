@@ -1,7 +1,7 @@
 import pytest
 from src.storage.schemas import Edge, Node
-from src.storage.csr_store import CSRBuffer
-from src.storage.csr_indexing import CSRIndexing
+from src.storage.store import CSRBuffer
+from src.storage.index import GraphIndex
 
 
 def test_add_edge_appears_in_buffer(populated_buffer):
@@ -42,7 +42,7 @@ def test_compact_triggers_at_threshold(alice, bob, graphdb_paper, ml_paper,
 
 def test_add_edge_unknown_node_raises(alice):
     buf = CSRBuffer(threshold=100)
-    idx = CSRIndexing(buf)
+    idx = GraphIndex(buf)
     idx.add_node(alice)
     # GraphDB Paper never added — KeyError on hash lookup
     edge = Edge(src_id="Alice", dest_id="GraphDB Paper", relation_type="authored")

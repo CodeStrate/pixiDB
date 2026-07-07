@@ -1,6 +1,6 @@
 import pytest
 from src.storage.schemas import Node, Edge
-from src.storage.csr_store import CSRHash, CSRBuffer
+from src.storage.store import CSRHash, CSRBuffer
 
 
 # --- Node fixtures ---

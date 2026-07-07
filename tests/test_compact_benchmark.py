@@ -1,4 +1,4 @@
-from src.storage.csr_store import CSRBuffer
+from src.storage.store import CSRBuffer
 from src.storage.schemas import Node
 
 def test_multiple_compact_cycles(alice, bob, graphdb_paper, ml_paper):

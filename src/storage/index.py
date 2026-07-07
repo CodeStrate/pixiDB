@@ -1,9 +1,9 @@
 from collections import defaultdict
 from src.storage.schemas import Node, Edge
-from src.storage.csr_store import CSRBuffer
+from src.storage.store import CSRBuffer
 
 
-class CSRIndexing:
+class GraphIndex:
     def __init__(self, buffer:CSRBuffer):
         self.secondary_index = defaultdict(list)
         self.buf = buffer
@@ -34,7 +34,7 @@ class CSRIndexing:
     
     def get_node_props(self, node_id) -> dict:
         idx = self.buf.hash.node_to_idx[node_id]
-        if not idx:
+        if idx is None:
             raise KeyError(f"{node_id} doesn't exist")
         return self.buf.hash.node_props[idx]
     
