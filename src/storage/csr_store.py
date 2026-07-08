@@ -59,7 +59,16 @@ class CSRHash:
         neighbor_names = [self.idx_to_node[i] for i in csr_neighbors] + [self.idx_to_node[dst] for dst, _ in buf_neighbors]
 
         return neighbor_names
-    
+
+    def _neighbor_edges(self, idx: int, csr: "CSR", buf: "CSRBuffer") -> list[tuple[int, dict]]:
+        edges = []
+        if csr.indptr is not None:
+            start, end = csr.indptr[idx], csr.indptr[idx + 1]
+            for i in range(start, end):
+                edges.append((int(csr.indices[i]), csr.edge_props[i]))
+        edges.extend(buf.pendingBuffer.get(idx, []))
+        return edges
+
 class CSRBuffer:
     def __init__(self, threshold):
         self.pendingBuffer = defaultdict(list)
