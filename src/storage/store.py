@@ -61,7 +61,8 @@ class CSRHash:
 
         return neighbor_names
 
-    def _neighbor_edges(self, idx: int, csr: "CSR", buf: "CSRBuffer") -> list[tuple[int, dict]]:
+    def _neighbor_edges(self, node_id: str, csr: CSR, buf: "CSRBuffer") -> list[tuple[int, dict]]:
+        idx = self.node_to_idx[node_id]
         edges = []
         if csr.indptr is not None:
             start, end = csr.indptr[idx], csr.indptr[idx + 1]

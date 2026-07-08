@@ -25,6 +25,9 @@ class GraphIndex:
     def get_neighbors(self, node_id):
         return self.buf.hash._neighbors(node_id, self.buf.csr, self.buf)
     
+    def get_neighbor_edges(self, node_id):
+        return self.buf.hash._neighbor_edges(node_id, self.buf.csr, self.buf)
+    
     def get_neighbors_by_relation(self, node_id, relation_type):
         src_idx = self.buf.hash.node_to_idx[node_id]
         neighbors = [(src, dst) for src, dst in self.secondary_index[relation_type] if src == src_idx]
