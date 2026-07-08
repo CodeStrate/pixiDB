@@ -1,6 +1,7 @@
 import pytest
 from src.storage.schemas import Edge, Node
-from src.storage.csr_store import CSRBuffer
+from src.storage.store import CSRBuffer
+from src.storage.index import GraphIndex
 
 
 def test_add_edge_appears_in_buffer(populated_buffer):
@@ -32,20 +33,21 @@ def test_compact_triggers_at_threshold(alice, bob, graphdb_paper, ml_paper,
     buf._add_node(bob)
     buf._add_node(graphdb_paper)
     buf._add_node(ml_paper)
-    buf._add_edge(edge_alice_graphdb)
-    buf._add_edge(edge_alice_ml)
-    buf._add_edge(edge_bob_ml)  # triggers compact at threshold=3
+    for e in [edge_alice_graphdb, edge_alice_ml, edge_bob_ml]:
+        buf._add_edge(buf.hash.node_to_idx[e.src_id], buf.hash.node_to_idx[e.dest_id], e.props)
+    # third edge triggers compact at threshold=3
     assert buf.pendingCount == 0
     assert buf.csr.indices is not None
 
 
-def test_add_edge_unknown_src_raises(alice, graphdb_paper):
+def test_add_edge_unknown_node_raises(alice):
     buf = CSRBuffer(threshold=100)
-    buf._add_node(alice)
-    # graphdb_paper not added to hash
+    idx = GraphIndex(buf)
+    idx.add_node(alice)
+    # GraphDB Paper never added — KeyError on hash lookup
     edge = Edge(src_id="Alice", dest_id="GraphDB Paper", relation_type="authored")
     with pytest.raises(KeyError):
-        buf._add_edge(edge)
+        idx.add_edge(edge)
 
 
 def test_duplicate_edge_merges_props(alice, graphdb_paper):
@@ -53,12 +55,10 @@ def test_duplicate_edge_merges_props(alice, graphdb_paper):
     buf._add_node(alice)
     buf._add_node(graphdb_paper)
 
-    buf._add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper",
-                      relation_type="authored", props={"weight": 1}))
-    buf._add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper",
-                      relation_type="authored", props={"weight": 2, "note": "updated"}))
-
     alice_idx = buf.hash.node_to_idx["Alice"]
+    graphdb_idx = buf.hash.node_to_idx["GraphDB Paper"]
+    buf._add_edge(alice_idx, graphdb_idx, {"weight": 1})
+    buf._add_edge(alice_idx, graphdb_idx, {"weight": 2, "note": "updated"})
     entries = buf.pendingBuffer[alice_idx]
 
     assert len(entries) == 1
@@ -71,7 +71,8 @@ def test_duplicate_edge_does_not_increment_count(alice, graphdb_paper):
     buf._add_node(alice)
     buf._add_node(graphdb_paper)
 
-    buf._add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper", relation_type="authored"))
-    buf._add_edge(Edge(src_id="Alice", dest_id="GraphDB Paper", relation_type="authored"))
-
+    alice_idx = buf.hash.node_to_idx["Alice"]
+    graphdb_idx = buf.hash.node_to_idx["GraphDB Paper"]
+    buf._add_edge(alice_idx, graphdb_idx, {})
+    buf._add_edge(alice_idx, graphdb_idx, {})
     assert buf.pendingCount == 1
