@@ -19,7 +19,7 @@ class GraphTraversal:
             traversed_path.append((current_node,depth))
             if max_depth is not None and depth >= max_depth:
                 continue # skips all nodes past depth but still computes nodes at max_depth by ignoring.
-            neighbors = self.index.get_neighbors(current_node) if not relation_type else self.index.get_edges_by_relation_type(relation_type)
+            neighbors = self.index.get_neighbors(current_node) if not relation_type else self.index.get_neighbors_by_relation(relation_type)
             for neighbor in neighbors:
                 if neighbor not in visited_set:
                     visited_set.add(neighbor)
