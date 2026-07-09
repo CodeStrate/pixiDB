@@ -19,7 +19,7 @@ class GraphTraversal:
             traversed_path.append((current_node,depth))
             if max_depth is not None and depth >= max_depth:
                 continue # skips all nodes past depth but still computes nodes at max_depth by ignoring.
-            neighbors = self.index.get_neighbors(current_node) if not relation_type else self.index.get_neighbors_by_relation(relation_type)
+            neighbors = self.index.get_neighbors(current_node) if not relation_type else self.index.get_neighbors_by_relation(current_node, relation_type)
             for neighbor in neighbors:
                 if neighbor not in visited_set:
                     visited_set.add(neighbor)
@@ -27,8 +27,70 @@ class GraphTraversal:
         
         return traversed_path
 
-    def shortest_path(self, start, end, weight_key=None): # dijikstra if weight, fall back to bfs otherwise
+    def shortest_path(self, start, end, weight_key=None): # dijkstra if weight, fall back to bfs otherwise
+        if not self._node_exists(start) or not self._node_exists(end):
+            return []
+
+        if start == end:
+            return [start]
+
         if weight_key is None:
-            # TODO: BFS till end
-            pass
-        
+            return self._bfs_shortest_path(start, end)
+        return self._dijkstra_shortest_path(start, end, weight_key)
+
+    def _node_exists(self, node_id) -> bool:
+        return node_id in self.index.buf.hash.node_to_idx
+
+    def _bfs_shortest_path(self, start, end):
+        parent = {start: None}
+        q = deque([start])
+
+        while q:
+            current_node = q.popleft()
+            if current_node == end:
+                return self._reconstruct_path(parent, end)
+            for neighbor in self.index.get_neighbors(current_node):
+                if neighbor not in parent:
+                    parent[neighbor] = current_node
+                    q.append(neighbor)
+
+        return []
+
+    def _dijkstra_shortest_path(self, start, end, weight_key):
+        parent = {start: None}
+        dist = {start: 0}
+        heap = [(0, start)]
+
+        while heap:
+            current_dist, current_node = heapq.heappop(heap)
+            if current_node == end:
+                return self._reconstruct_path(parent, end)
+            if current_dist > dist.get(current_node, float("inf")):
+                continue # stale entry: a shorter path to this node was already found
+
+            for neighbor_idx, props in self.index.get_neighbor_edges(current_node):
+                neighbor = self.index.buf.hash.idx_to_node[neighbor_idx]
+                weight = props.get(weight_key, 1)
+                if weight < 0:
+                    raise ValueError(
+                        f"Negative edge weight ({weight}) between {current_node} and {neighbor} "
+                        "is not supported by Dijkstra's algorithm."
+                    )
+
+                new_dist = current_dist + weight
+                if new_dist < dist.get(neighbor, float("inf")):
+                    dist[neighbor] = new_dist
+                    parent[neighbor] = current_node
+                    heapq.heappush(heap, (new_dist, neighbor))
+
+        return []
+
+    @staticmethod
+    def _reconstruct_path(parent, end):
+        path = []
+        node = end
+        while node is not None:
+            path.append(node)
+            node = parent[node]
+        path.reverse()
+        return path
