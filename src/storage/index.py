@@ -35,6 +35,9 @@ class GraphIndex:
 
         return neighbor_names
     
+    def has_node(self, node_id) -> bool:
+        return node_id in self.index.buf.hash.node_to_idx
+    
     def get_node_props(self, node_id) -> dict:
         idx = self.buf.hash.node_to_idx[node_id]
         if idx is None:
