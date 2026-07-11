@@ -10,14 +10,14 @@ class CSR:
         self.edge_props = None # A
 
     @classmethod
-    def csr_from_arrays(cls, indices, indptr, edge_props):
+    def csr_from_arrays(cls, indices: np.ndarray, indptr: np.ndarray, edge_props: np.ndarray):
         obj = cls()
         obj.indices = np.array(indices)
         obj.indptr = np.array(indptr)
         obj.edge_props = np.array(edge_props)
         return obj
 
-    def _build_csr(self, edges, num_nodes):
+    def _build_csr(self, edges: list[tuple], num_nodes: int):
         # sort by src
         graph_edges = sorted(edges, key=lambda e: e[0]) # edges are [(src, dest, props/vals), (...), ..]
 
@@ -41,16 +41,16 @@ class CSRHash:
         self.node_props = {}
 
     def _add_node_hash(self, node: Node):
-        if node.node_id not in self.node_to_idx:
+        if node.name not in self.node_to_idx:
             idx = len(self.node_to_idx) 
-            self.node_to_idx[node.node_id] = idx
-            self.idx_to_node[idx] = node.node_id
+            self.node_to_idx[node.name] = idx
+            self.idx_to_node[idx] = node.name
             self.node_props[idx] = node.props
         else:
-            warnings.warn(f'{node.node_id} already exists in hash, skipping.', UserWarning)
+            warnings.warn(f'{node.name} already exists in hash, skipping.', UserWarning)
 
-    def _neighbors(self, node_id, csr:CSR, buf: "CSRBuffer"):
-        idx = self.node_to_idx[node_id]
+    def _neighbors(self, node_name: str, csr:CSR, buf: "CSRBuffer"):
+        idx = self.node_to_idx[node_name]
         csr_neighbors = []
         buf_neighbors = buf.pendingBuffer.get(idx, [])
         if csr.indptr is not None:
@@ -61,14 +61,14 @@ class CSRHash:
 
         return neighbor_names
 
-    def _neighbor_edges(self, node_id: str, csr: CSR, buf: "CSRBuffer") -> list[tuple[int, dict]]:
-        idx = self.node_to_idx[node_id]
+    def _neighbor_edges(self, node_name: str, csr: CSR, buf: "CSRBuffer") -> list[tuple[str, dict]]:
+        idx = self.node_to_idx[node_name]
         edges = []
         if csr.indptr is not None:
             start, end = csr.indptr[idx], csr.indptr[idx + 1]
             for i in range(start, end):
-                edges.append((int(csr.indices[i]), csr.edge_props[i]))
-        edges.extend(buf.pendingBuffer.get(idx, []))
+                edges.append((self.idx_to_node[csr.indices[i]], csr.edge_props[i]))
+        edges.extend([(self.idx_to_node[dst], edge_props) for dst, edge_props in buf.pendingBuffer.get(idx, [])])
         return edges
 
 class CSRBuffer:
@@ -80,14 +80,14 @@ class CSRBuffer:
 
         self.threshold = threshold
 
-    def _add_edge(self, src, dst, props):
-        if src in self.pendingBuffer:
-            for i, values in enumerate(self.pendingBuffer[src]):
-                old_dst, old_props = values
-                if dst == old_dst:
-                    self.pendingBuffer[src][i] = (dst, {**old_props, **props})
+    def _add_edge(self, src_idx: int, dst_idx: int, props: dict):
+        if src_idx in self.pendingBuffer:
+            for i, values in enumerate(self.pendingBuffer[src_idx]):
+                old_dst_idx, old_props = values
+                if dst_idx == old_dst_idx:
+                    self.pendingBuffer[src_idx][i] = (dst_idx, {**old_props, **props})
                     return
-        self.pendingBuffer[src].append((dst, props))
+        self.pendingBuffer[src_idx].append((dst_idx, props))
         self.pendingCount += 1
         if self.pendingCount >= self.threshold:
             self._compact()

@@ -69,8 +69,7 @@ class GraphTraversal:
             if current_dist > dist.get(current_node, float("inf")):
                 continue # stale entry: a shorter path to this node was already found
 
-            for neighbor_idx, props in self.index.get_neighbor_edges(current_node):
-                neighbor = self.index.buf.hash.idx_to_node[neighbor_idx]
+            for neighbor, props in self.index.get_neighbor_edges(current_node):
                 weight = props.get(weight_key, 1)
                 if weight < 0:
                     raise ValueError(
