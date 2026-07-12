@@ -34,7 +34,7 @@ def test_compact_triggers_at_threshold(alice, bob, graphdb_paper, ml_paper,
     buf._add_node(graphdb_paper)
     buf._add_node(ml_paper)
     for e in [edge_alice_graphdb, edge_alice_ml, edge_bob_ml]:
-        buf._add_edge(buf.hash.node_to_idx[e.src_id], buf.hash.node_to_idx[e.dest_id], e.props)
+        buf._add_edge(buf.hash.node_to_idx[e.src_name], buf.hash.node_to_idx[e.dst_name], e.props)
     # third edge triggers compact at threshold=3
     assert buf.pendingCount == 0
     assert buf.csr.indices is not None
@@ -45,7 +45,7 @@ def test_add_edge_unknown_node_raises(alice):
     idx = GraphIndex(buf)
     idx.add_node(alice)
     # GraphDB Paper never added — KeyError on hash lookup
-    edge = Edge(src_id="Alice", dest_id="GraphDB Paper", relation_type="authored")
+    edge = Edge(src_name="Alice", dst_name="GraphDB Paper", relation_type="authored")
     with pytest.raises(KeyError):
         idx.add_edge(edge)
 

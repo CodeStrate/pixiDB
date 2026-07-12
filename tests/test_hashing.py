@@ -61,8 +61,8 @@ def test_neighbors_csr_none_returns_only_buf_neighbors(populated_hash,
     # CSR never built — all edges live in buffer only
     buf = CSRBuffer(threshold=1000)
     buf.hash = populated_hash  # share the hash so node_to_idx is populated
-    buf._add_edge(buf.hash.node_to_idx[edge_alice_graphdb.src_id], buf.hash.node_to_idx[edge_alice_graphdb.dest_id], edge_alice_graphdb.props)
-    buf._add_edge(buf.hash.node_to_idx[edge_alice_ml.src_id], buf.hash.node_to_idx[edge_alice_ml.dest_id], edge_alice_ml.props)
+    buf._add_edge(buf.hash.node_to_idx[edge_alice_graphdb.src_name], buf.hash.node_to_idx[edge_alice_graphdb.dst_name], edge_alice_graphdb.props)
+    buf._add_edge(buf.hash.node_to_idx[edge_alice_ml.src_name], buf.hash.node_to_idx[edge_alice_ml.dst_name], edge_alice_ml.props)
     csr = CSR()  # indices and indptr are None
     result = populated_hash._neighbors("Alice", csr, buf)
     assert set(result) == {"GraphDB Paper", "ML Paper"}
@@ -77,7 +77,7 @@ def test_neighbors_merges_csr_and_buf(populated_hash,
     csr._build_csr([(0, 2, {})], num_nodes=4)  # Alice→GraphDB Paper only
     buf = CSRBuffer(threshold=1000)
     buf.hash = populated_hash
-    buf._add_edge(buf.hash.node_to_idx[edge_alice_ml.src_id], buf.hash.node_to_idx[edge_alice_ml.dest_id], edge_alice_ml.props)
+    buf._add_edge(buf.hash.node_to_idx[edge_alice_ml.src_name], buf.hash.node_to_idx[edge_alice_ml.dst_name], edge_alice_ml.props)
     result = populated_hash._neighbors("Alice", csr, buf)
     assert set(result) == {"GraphDB Paper", "ML Paper"}
 
@@ -94,6 +94,6 @@ def test_neighbors_buf_only_no_csr_edges_for_node(populated_hash, edge_bob_ml):
     csr._build_csr([(0, 2, {})], num_nodes=4)  # only Alice→GraphDB in CSR
     buf = CSRBuffer(threshold=1000)
     buf.hash = populated_hash
-    buf._add_edge(buf.hash.node_to_idx[edge_bob_ml.src_id], buf.hash.node_to_idx[edge_bob_ml.dest_id], edge_bob_ml.props)
+    buf._add_edge(buf.hash.node_to_idx[edge_bob_ml.src_name], buf.hash.node_to_idx[edge_bob_ml.dst_name], edge_bob_ml.props)
     result = populated_hash._neighbors("Bob", csr, buf)
     assert set(result) == {"ML Paper"}
