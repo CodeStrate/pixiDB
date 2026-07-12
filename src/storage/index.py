@@ -39,10 +39,19 @@ class GraphIndex:
     
     def get_neighbors_by_relation(self, node_name:str, relation_type:str):
         src_idx = self.buf.hash.node_to_idx[node_name]
-        neighbors = [dst for dst in self.relation_index[relation_type][src_idx]]
+        neighbors = [dst_idx for dst_idx in self.relation_index[relation_type][src_idx]]
         neighbor_names = [self.buf.hash.idx_to_node[dst] for dst in neighbors]
 
         return neighbor_names
+    
+    def get_neighbor_edges_by_relation(self, node_name: str, relation_type: str) -> list[str, dict]:
+        src_idx = self.buf.hash.node_to_idx[node_name]
+        results: list[str, dict] = []
+        for dst_idx in self.relation_index[relation_type][src_idx]:
+            dst_name = self.buf.hash.idx_to_node[dst_idx]
+            props = self.get_edge_props(node_name, dst_name)
+            results.append((dst_name, props))
+        return results
     
     def get_nodes_by_label(self, label:str) -> list[str]:
         return [self.buf.hash.idx_to_node[node] for node in self.label_to_node_index[label]]

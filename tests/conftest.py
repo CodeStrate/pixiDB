@@ -7,38 +7,38 @@ from src.storage.store import CSRHash, CSRBuffer
 
 @pytest.fixture
 def alice():
-    return Node(node_id="Alice", label="Person", props={"role": "author"})
+    return Node(name="Alice", label="Person", props={"role": "author"})
 
 @pytest.fixture
 def bob():
-    return Node(node_id="Bob", label="Person", props={"role": "author"})
+    return Node(name="Bob", label="Person", props={"role": "author"})
 
 @pytest.fixture
 def graphdb_paper():
-    return Node(node_id="GraphDB Paper", label="Paper", props={"year": 2024})
+    return Node(name="GraphDB Paper", label="Paper", props={"year": 2024})
 
 @pytest.fixture
 def ml_paper():
-    return Node(node_id="ML Paper", label="Paper", props={"year": 2023})
+    return Node(name="ML Paper", label="Paper", props={"year": 2023})
 
 
 # --- Edge fixtures ---
 
 @pytest.fixture
 def edge_alice_graphdb():
-    return Edge(src_id="Alice", dest_id="GraphDB Paper", relation_type="authored")
+    return Edge(src_name="Alice", dst_name="GraphDB Paper", relation_type="authored")
 
 @pytest.fixture
 def edge_alice_ml():
-    return Edge(src_id="Alice", dest_id="ML Paper", relation_type="authored")
+    return Edge(src_name="Alice", dst_name="ML Paper", relation_type="authored")
 
 @pytest.fixture
 def edge_bob_ml():
-    return Edge(src_id="Bob", dest_id="ML Paper", relation_type="authored")
+    return Edge(src_name="Bob", dst_name="ML Paper", relation_type="authored")
 
 @pytest.fixture
 def edge_graphdb_ml():
-    return Edge(src_id="GraphDB Paper", dest_id="ML Paper", relation_type="cites")
+    return Edge(src_name="GraphDB Paper", dst_name="ML Paper", relation_type="cites")
 
 
 # --- Populated hash fixture ---
@@ -66,5 +66,5 @@ def populated_buffer(alice, bob, graphdb_paper, ml_paper,
     buf._add_node(graphdb_paper)
     buf._add_node(ml_paper)
     for e in [edge_alice_graphdb, edge_alice_ml, edge_bob_ml, edge_graphdb_ml]:
-        buf._add_edge(buf.hash.node_to_idx[e.src_id], buf.hash.node_to_idx[e.dest_id], e.props)
+        buf._add_edge(buf.hash.node_to_idx[e.src_name], buf.hash.node_to_idx[e.dst_name], e.props)
     return buf

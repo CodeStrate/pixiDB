@@ -19,12 +19,15 @@ class GraphTraversal:
 
         while q:
             current_node, depth = q.popleft()
-            traversed_path.append((current_node, depth))
+            # Move the label filter in the end. traversing by label will break under this case Person -> Person -> Book,
+            # if Person gets dropped Book label isn't reached
+            # Better move is filter nodes by label as we append.
+            if node_label is None or self.index.get_node_label(current_node) == node_label:
+                traversed_path.append((current_node, depth))
             if max_depth is not None and depth >= max_depth:
                 continue # skips all nodes past depth but still computes nodes at max_depth by ignoring.
             neighbors = self.index.get_neighbors(current_node) if relation_type is None else self.index.get_neighbors_by_relation(current_node, relation_type)
-            neighbor_nodes = [node for node in neighbors if self.index.get_node_label(node) == node_label] if node_label is not None else neighbors
-            for neighbor in neighbor_nodes:
+            for neighbor in neighbors:
                 if neighbor not in visited_set:
                     visited_set.add(neighbor)
                     q.append((neighbor, depth + 1))
@@ -32,7 +35,7 @@ class GraphTraversal:
         
         return traversed_path
 
-    def shortest_path(self, start, end, weight_key=None): # dijkstra if weight, fall back to bfs otherwise
+    def shortest_path(self, start, end, weight_key=None, relation_type=None): # dijkstra if weight, fall back to bfs otherwise
         if not self.index.has_node(start) or not self.index.has_node(end):
             return []
 
@@ -40,10 +43,10 @@ class GraphTraversal:
             return [start]
 
         if weight_key is None:
-            return self._bfs_shortest_path(start, end)
-        return self._dijkstra_shortest_path(start, end, weight_key)
+            return self._bfs_shortest_path(start, end, relation_type)
+        return self._dijkstra_shortest_path(start, end, weight_key, relation_type)
 
-    def _bfs_shortest_path(self, start, end):
+    def _bfs_shortest_path(self, start, end, relation_type=None):
         parent = {start: None}
         q = deque([start])
 
@@ -51,14 +54,15 @@ class GraphTraversal:
             current_node = q.popleft()
             if current_node == end:
                 return self._reconstruct_path(parent, end)
-            for neighbor in self.index.get_neighbors(current_node):
+            neighbors = self.index.get_neighbors(current_node) if relation_type is None else self.index.get_neighbors_by_relation(current_node, relation_type)
+            for neighbor in neighbors:
                 if neighbor not in parent:
                     parent[neighbor] = current_node
                     q.append(neighbor)
 
         return []
 
-    def _dijkstra_shortest_path(self, start, end, weight_key):
+    def _dijkstra_shortest_path(self, start, end, weight_key, relation_type=None):
         parent = {start: None}
         dist = {start: 0}
         heap = [(0, start)]
@@ -69,8 +73,8 @@ class GraphTraversal:
                 return self._reconstruct_path(parent, end)
             if current_dist > dist[current_node]:
                 continue # stale entry: a shorter path to this node was already found
-
-            for neighbor, props in self.index.get_neighbor_edges(current_node):
+            neighbor_edges = self.index.get_neighbor_edges(current_node) if relation_type is None else self.index.get_neighbor_edges_by_relation(current_node, relation_type)
+            for neighbor, props in neighbor_edges:
                 weight = props.get(weight_key, 1)
                 if weight < 0:
                     raise ValueError(

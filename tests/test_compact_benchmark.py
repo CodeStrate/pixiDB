@@ -25,7 +25,7 @@ def test_multiple_compact_cycles(alice, bob, graphdb_paper, ml_paper):
 def stress_test_buffer_with_many_edges(num_edges: int):
     buf = CSRBuffer(threshold=num_edges+1)
     for i in range(num_edges+1):
-        buf._add_node(Node(node_id=str(i), label="Number", props={}))
+        buf._add_node(Node(name=str(i), label="Number", props={}))
     for j in range(num_edges):
         buf._add_edge(buf.hash.node_to_idx[str(j)], buf.hash.node_to_idx[str(j+1)], {})
 
