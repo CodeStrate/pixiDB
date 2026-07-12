@@ -6,7 +6,7 @@ class GraphTraversal:
     def __init__(self, index: GraphIndex):
         self.index = index
 
-    def bfs(self, start, relation_type=None, max_depth=None):
+    def bfs(self, start, relation_type=None, node_label=None, max_depth=None):
         # TODO: WE should augment edges return here.
         if not self.index.has_node(start):
             return []
@@ -23,7 +23,8 @@ class GraphTraversal:
             if max_depth is not None and depth >= max_depth:
                 continue # skips all nodes past depth but still computes nodes at max_depth by ignoring.
             neighbors = self.index.get_neighbors(current_node) if relation_type is None else self.index.get_neighbors_by_relation(current_node, relation_type)
-            for neighbor in neighbors:
+            neighbor_nodes = [node for node in neighbors if self.index.get_node_label(node) == node_label] if node_label is not None else neighbors
+            for neighbor in neighbor_nodes:
                 if neighbor not in visited_set:
                     visited_set.add(neighbor)
                     q.append((neighbor, depth + 1))
@@ -66,7 +67,7 @@ class GraphTraversal:
             current_dist, current_node = heapq.heappop(heap)
             if current_node == end:
                 return self._reconstruct_path(parent, end)
-            if current_dist > dist.get(current_node, float("inf")):
+            if current_dist > dist[current_node]:
                 continue # stale entry: a shorter path to this node was already found
 
             for neighbor, props in self.index.get_neighbor_edges(current_node):
@@ -78,7 +79,7 @@ class GraphTraversal:
                     )
 
                 new_dist = current_dist + weight
-                if new_dist < dist.get(neighbor, float("inf")):
+                if new_dist < dist.get(neighbor, float('inf')):
                     dist[neighbor] = new_dist
                     parent[neighbor] = current_node
                     heapq.heappush(heap, (new_dist, neighbor))

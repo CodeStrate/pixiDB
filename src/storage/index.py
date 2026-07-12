@@ -5,24 +5,29 @@ from src.storage.store import CSRBuffer
 
 class GraphIndex:
     def __init__(self, buffer:CSRBuffer):
-        self.secondary_index = defaultdict(lambda: defaultdict(list)) # switch from 1D list to 2 level dict
+        self.relation_index = defaultdict(lambda: defaultdict(list)) # switch from 1D list to 2 level dict
+        self.label_to_node_index = defaultdict(list) # label : [node_idxs...]
+        self.node_to_label_index: dict[int, str] = {} # node_idx : label
         self.buf = buffer
 
     def add_edge(self, edge:Edge):
         src_idx = self.buf.hash.node_to_idx[edge.src_name]
         dst_idx = self.buf.hash.node_to_idx[edge.dst_name]
         edge_props = edge.props
-        if dst_idx not in self.secondary_index[edge.relation_type][src_idx]:
-            self.secondary_index[edge.relation_type][src_idx].append(dst_idx)
+        if dst_idx not in self.relation_index[edge.relation_type][src_idx]:
+            self.relation_index[edge.relation_type][src_idx].append(dst_idx)
         self.buf._add_edge(src_idx, dst_idx, edge_props)
 
     def add_node(self, node:Node):
         self.buf._add_node(node)
+        node_idx = self.buf.hash.node_to_idx[node.name]
+        self.label_to_node_index[node.label].append(node_idx)
+        self.node_to_label_index[node_idx] = node.label
 
     def get_edges_by_relation_type(self, relation_type: str) -> list[tuple[str, str]]:
         edges_by_relation = []
-        for src_idx in self.secondary_index[relation_type]:
-            for dst_idx in self.secondary_index[relation_type][src_idx]:
+        for src_idx in self.relation_index[relation_type]:
+            for dst_idx in self.relation_index[relation_type][src_idx]:
                 edges_by_relation.append((src_idx, dst_idx))
         return [(self.buf.hash.idx_to_node[src], self.buf.hash.idx_to_node[dst]) for src, dst in edges_by_relation]
     
@@ -34,11 +39,18 @@ class GraphIndex:
     
     def get_neighbors_by_relation(self, node_name:str, relation_type:str):
         src_idx = self.buf.hash.node_to_idx[node_name]
-        neighbors = [dst for dst in self.secondary_index[relation_type][src_idx]]
+        neighbors = [dst for dst in self.relation_index[relation_type][src_idx]]
         neighbor_names = [self.buf.hash.idx_to_node[dst] for dst in neighbors]
 
         return neighbor_names
     
+    def get_nodes_by_label(self, label:str) -> list[str]:
+        return [self.buf.hash.idx_to_node[node] for node in self.label_to_node_index[label]]
+
+    def get_node_label(self, node_name: str) -> str:
+        node_idx = self.buf.hash.node_to_idx[node_name]
+        return self.node_to_label_index[node_idx]
+
     def has_node(self, node_name:str) -> bool:
         return node_name in self.buf.hash.node_to_idx
     

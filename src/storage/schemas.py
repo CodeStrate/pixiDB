@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 @dataclass
 class Node:
     name: str
-    # label: str  not in use yet
+    label: str 
     props: dict = field(default_factory=dict)
 
 @dataclass
