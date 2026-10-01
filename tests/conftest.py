@@ -1,70 +1,15 @@
 import pytest
-from src.storage.schemas import Node, Edge
-from src.storage.store import CSRHash, CSRBuffer
+from uuid import uuid4
+
+from src.utils import namespace as namespace_module
 
 
-# --- Node fixtures ---
-
-@pytest.fixture
-def alice():
-    return Node(name="Alice", label="Person", props={"role": "author"})
-
-@pytest.fixture
-def bob():
-    return Node(name="Bob", label="Person", props={"role": "author"})
-
-@pytest.fixture
-def graphdb_paper():
-    return Node(name="GraphDB Paper", label="Paper", props={"year": 2024})
-
-@pytest.fixture
-def ml_paper():
-    return Node(name="ML Paper", label="Paper", props={"year": 2023})
-
-
-# --- Edge fixtures ---
-
-@pytest.fixture
-def edge_alice_graphdb():
-    return Edge(src_name="Alice", dst_name="GraphDB Paper", relation_type="authored")
-
-@pytest.fixture
-def edge_alice_ml():
-    return Edge(src_name="Alice", dst_name="ML Paper", relation_type="authored")
-
-@pytest.fixture
-def edge_bob_ml():
-    return Edge(src_name="Bob", dst_name="ML Paper", relation_type="authored")
-
-@pytest.fixture
-def edge_graphdb_ml():
-    return Edge(src_name="GraphDB Paper", dst_name="ML Paper", relation_type="cites")
-
-
-# --- Populated hash fixture ---
-# Alice=0, Bob=1, GraphDB Paper=2, ML Paper=3
-
-@pytest.fixture
-def populated_hash(alice, bob, graphdb_paper, ml_paper):
-    h = CSRHash()
-    h._add_node_hash(alice)
-    h._add_node_hash(bob)
-    h._add_node_hash(graphdb_paper)
-    h._add_node_hash(ml_paper)
-    return h
-
-
-# --- Populated buffer fixture (threshold high so no auto-compact) ---
-
-@pytest.fixture
-def populated_buffer(alice, bob, graphdb_paper, ml_paper,
-                     edge_alice_graphdb, edge_alice_ml,
-                     edge_bob_ml, edge_graphdb_ml):
-    buf = CSRBuffer(threshold=100)
-    buf._add_node(alice)
-    buf._add_node(bob)
-    buf._add_node(graphdb_paper)
-    buf._add_node(ml_paper)
-    for e in [edge_alice_graphdb, edge_alice_ml, edge_bob_ml, edge_graphdb_ml]:
-        buf._add_edge(buf.hash.node_to_idx[e.src_name], buf.hash.node_to_idx[e.dst_name], e.props)
-    return buf
+@pytest.fixture(autouse=True)
+def isolated_namespace(tmp_path, monkeypatch):
+    """Every Edge() construction calls get_ns_uuid() unconditionally
+    (see Edge._set_id in schemas.py), so tests need a valid namespace
+    file without touching the project's real .pixidb/ directory."""
+    namespace_file = tmp_path / "namespace.uuid"
+    namespace_file.write_text(str(uuid4()), encoding="utf-8")
+    monkeypatch.setattr(namespace_module, "NAMESPACE_FILE", str(namespace_file))
+    yield

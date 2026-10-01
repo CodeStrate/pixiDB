@@ -1,8 +1,8 @@
 import pytest
-from src.storage.schemas import Node, Edge
-from src.storage.store import CSRBuffer
-from src.storage.index import GraphIndex
-from src.graph.traversal import GraphTraversal
+from src.graph.schemas import Node, Edge
+from src.graph.store import CSRBuffer
+from src.graph.index import GraphIndex
+from src.traversal.traversal import GraphTraversal
 
 
 # --- shared fixtures (built on conftest's alice/bob/graphdb_paper/ml_paper) ---
